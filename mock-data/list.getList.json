@@ -1,0 +1,7 @@
+[
+  {"id": 5, "date": "1357643063000", "subject": "Testing the Backbone Reactive List Page", "from": "Rob" },
+  {"id": 4, "date": "1357642823000", "subject": "Another exciting subject line", "from": "John" },
+  {"id": 3, "date": "1357641983000", "subject": "I just love dancing", "from": "Billy" },
+  {"id": 2, "date": "1357565783000", "subject": "Possible expansion plans", "from": "Wilhelm" },
+  {"id": 1, "date": "1357563263000", "subject": "Can't think of anything witty", "from": "Susan" }
+] 
