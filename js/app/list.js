@@ -5,7 +5,11 @@ var Backbone; // hello jslint
 var $; // hello jslint
 
 // ## Define the List Item Model
-var ListItem = Backbone.Model.extend({});
+var ListItem = Backbone.Model.extend({
+  url: function () {
+    return '/mock-data/message.'+this.id+'.json';
+  }
+});
 
 // ## Define the List Collection
 var ListCollection = Backbone.Collection.extend({
@@ -17,13 +21,27 @@ var ListCollection = Backbone.Collection.extend({
 
   // As we don't really care for the backend in this demo, we have
   // hard-coded some JSON data to use in the application
-  url: '/mock-data/list.getList.json',
-
-  parse: function (response) {
-    return response;
-  }
+  url: '/mock-data/list.getList.json'
 });
 
+
+var MessageView = Backbone.View.extend({
+  id: 'message',
+  initialize: function() {
+    var self = this;
+    this.model.fetch({success: function() {
+      self.render();
+    }});
+  },
+  render: function() {
+    var html = '<p><label>From</label> '+this.model.get('from')+'</p>'+
+      '<p><label>Date</label> '+this.model.get('date')+'</p>'+
+      '<p><label>Subject</label> '+this.model.get('subject')+'</p>'+
+      '<p>'+this.model.get('body')+'</p>';
+    this.$el.html(html);
+    $('body').append(this.$el);
+  }
+});
 
 // ## Define the individual List Row
 var ListRowView = Backbone.View.extend({
@@ -49,6 +67,15 @@ var ListRowView = Backbone.View.extend({
 
     this.$el.append(html);
     return this;
+  },
+
+
+  events: {
+    "click": "open"
+  },
+
+  open: function() {
+    var message = new MessageView({model: this.model} );
   },
 
   // ### Pad Time
