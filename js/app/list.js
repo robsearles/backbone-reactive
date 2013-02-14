@@ -27,9 +27,12 @@ var ListCollection = Backbone.Collection.extend({
 
 var MessageView = Backbone.View.extend({
   id: 'message',
-  initialize: function() {
+  initialize: function() { },
+
+  loadMessage: function(model) {
     var self = this;
-    this.model.fetch({success: function() {
+    self.model = model;
+    self.model.fetch({success: function() {
       self.render();
     }});
   },
@@ -39,7 +42,11 @@ var MessageView = Backbone.View.extend({
       '<p><label>Subject</label> '+this.model.get('subject')+'</p>'+
       '<p>'+this.model.get('body')+'</p>';
     this.$el.html(html);
-    $('body').append(this.$el);
+    // if the message view is not already attached to the page, simply
+    // append it into the body
+    if( ! $("body").children("#"+this.id).length) {
+      $('body').append(this.$el);
+    }
   }
 });
 
@@ -75,7 +82,10 @@ var ListRowView = Backbone.View.extend({
   },
 
   open: function() {
-    var message = new MessageView({model: this.model} );
+    // we want to reuse the MessageView, so don't init a new view on
+    // every call of open. Instead, "bubble" the event up, passing the
+    // relevant model
+    this.trigger("viewMessage", this.model);
   },
 
   // ### Pad Time
@@ -106,6 +116,9 @@ var ListView = Backbone.View.extend({
         self.render();
       }
     });
+    // we want to reuse the same view for multiple messages. This is
+    // why we are initiating it now
+    this.messageView = new MessageView();
   },
 
   // ### Render this View
@@ -125,6 +138,11 @@ var ListView = Backbone.View.extend({
     self.collection.each(function (listItem) {
       var v = new ListRowView({model: listItem});
       v.render();
+      // listen for the "viewMessage" event, loading the message whenever it is triggered
+      v.on('viewMessage', function(model) {
+        self.messageView.loadMessage(model);
+      });
+
       self.$el.children("table").append(v.el);
     });
 
