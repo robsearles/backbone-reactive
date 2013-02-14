@@ -4,6 +4,41 @@
 var Backbone; // hello jslint
 var $; // hello jslint
 
+// ## Shared Date Functions
+// Utility class for date functionality
+var DateFunctions = {
+  // convert a timestamp into a JavaScript Date Object
+  getDate: function(timestamp) {
+    return new Date(parseInt(timestamp, 10));
+  },
+
+  // Format a Javascript Date Object into a more readable date string
+  getDateNice: function(date) {
+    return date.toLocaleDateString();
+  },
+
+  // Format a Javascript Date Object into a more readable time string
+  getTimeNice: function(date) {
+    return this.padTime(date.getHours()) + ':' + this.padTime(date.getMinutes());
+  },
+
+  // Format a Javascript Date Object into a more readable date and
+  // time string
+  getDateAndTimeNice: function(date) {
+    return this.getDateNice(date)+" "+this.getTimeNice(date);
+  },
+  
+  // ### Pad Time
+  // A very simple function to ensure that if the hours or minutes
+  // contain a single digit, pad it out. Eg: 9 becomes 09
+  padTime: function (time) {
+    if (time < 10) {
+      return '0' + time;
+    }
+    return time;
+  }
+};
+
 // ## Define the List Item Model
 var ListItem = Backbone.Model.extend({
   url: function () {
@@ -37,8 +72,11 @@ var MessageView = Backbone.View.extend({
     }});
   },
   render: function() {
+    var date = DateFunctions.getDate(this.model.get('date'));
+    var dateNice = DateFunctions.getDateAndTimeNice(date);
+
     var html = '<p><label>From</label> '+this.model.get('from')+'</p>'+
-      '<p><label>Date</label> '+this.model.get('date')+'</p>'+
+      '<p><label>Date</label> '+dateNice+'</p>'+
       '<p><label>Subject</label> '+this.model.get('subject')+'</p>'+
       '<p>'+this.model.get('body')+'</p>';
     this.$el.html(html);
@@ -60,9 +98,9 @@ var ListRowView = Backbone.View.extend({
 
     // I am not spending too much time on the date formatting or
     // making it look nice, I just need enough so it works
-    var date = new Date(parseInt(this.model.get('date'), 10));
-    var timeNice = this.padTime(date.getHours()) + ':' + this.padTime(date.getMinutes());
-    var dateNice = date.toLocaleDateString();
+    var date = DateFunctions.getDate(this.model.get('date'));
+    var timeNice = DateFunctions.getTimeNice(date);
+    var dateNice = DateFunctions.getDateNice(date);
 
     var subject = this.model.get("subject");
     var from = this.model.get("from");
@@ -86,16 +124,6 @@ var ListRowView = Backbone.View.extend({
     // every call of open. Instead, "bubble" the event up, passing the
     // relevant model
     this.trigger("viewMessage", this.model);
-  },
-
-  // ### Pad Time
-  // A very simple function to ensure that if the hours or minutes
-  // contain a single digit, pad it out. Eg: 9 becomes 09
-  padTime: function (time) {
-    if (time < 10) {
-      return '0' + time;
-    }
-    return time;
   }
 });
 
