@@ -4,8 +4,47 @@
 var Backbone; // hello jslint
 var $; // hello jslint
 
+// ## Shared Date Functions
+// Utility class for date functionality
+var DateFunctions = {
+  // convert a timestamp into a JavaScript Date Object
+  getDate: function (timestamp) {
+    return new Date(parseInt(timestamp, 10));
+  },
+
+  // Format a Javascript Date Object into a more readable date string
+  getDateNice: function (date) {
+    return date.toLocaleDateString();
+  },
+
+  // Format a Javascript Date Object into a more readable time string
+  getTimeNice: function (date) {
+    return this.padTime(date.getHours()) + ':' + this.padTime(date.getMinutes());
+  },
+
+  // Format a Javascript Date Object into a more readable date and
+  // time string
+  getDateAndTimeNice: function (date) {
+    return this.getDateNice(date) + " " + this.getTimeNice(date);
+  },
+
+  // ### Pad Time
+  // A very simple function to ensure that if the hours or minutes
+  // contain a single digit, pad it out. Eg: 9 becomes 09
+  padTime: function (time) {
+    if (time < 10) {
+      return '0' + time;
+    }
+    return time;
+  }
+};
+
 // ## Define the List Item Model
-var ListItem = Backbone.Model.extend({});
+var ListItem = Backbone.Model.extend({
+  url: function () {
+    return '/mock-data/message.' + this.id + '.json';
+  }
+});
 
 // ## Define the List Collection
 var ListCollection = Backbone.Collection.extend({
@@ -17,13 +56,36 @@ var ListCollection = Backbone.Collection.extend({
 
   // As we don't really care for the backend in this demo, we have
   // hard-coded some JSON data to use in the application
-  url: '/mock-data/list.getList.json',
-
-  parse: function (response) {
-    return response;
-  }
+  url: '/mock-data/list.getList.json'
 });
 
+// ## Define the View to display the messages
+var MessageView = Backbone.View.extend({
+  id: 'message',
+
+  loadMessage: function (model) {
+    var self = this;
+    self.model = model;
+    self.model.fetch({success: function () {
+      self.render();
+    }});
+  },
+  render: function () {
+    var date = DateFunctions.getDate(this.model.get('date'));
+    var dateNice = DateFunctions.getDateAndTimeNice(date);
+
+    var html = '<p><label>From</label> ' + this.model.get('from') + '</p>' +
+      '<p><label>Date</label> ' + dateNice + '</p>' +
+      '<p><label>Subject</label> ' + this.model.get('subject') + '</p>' +
+      '<p>' + this.model.get('body') + '</p>';
+    this.$el.html(html);
+    // if the message view is not already attached to the page, simply
+    // append it into the body
+    if (!$("body").children("#" + this.id).length) {
+      $('body').append(this.$el);
+    }
+  }
+});
 
 // ## Define the individual List Row
 var ListRowView = Backbone.View.extend({
@@ -35,9 +97,9 @@ var ListRowView = Backbone.View.extend({
 
     // I am not spending too much time on the date formatting or
     // making it look nice, I just need enough so it works
-    var date = new Date(parseInt(this.model.get('date'), 10));
-    var timeNice = this.padTime(date.getHours()) + ':' + this.padTime(date.getMinutes());
-    var dateNice = date.toLocaleDateString();
+    var date = DateFunctions.getDate(this.model.get('date'));
+    var timeNice = DateFunctions.getTimeNice(date);
+    var dateNice = DateFunctions.getDateNice(date);
 
     var subject = this.model.get("subject");
     var from = this.model.get("from");
@@ -51,14 +113,15 @@ var ListRowView = Backbone.View.extend({
     return this;
   },
 
-  // ### Pad Time
-  // A very simple function to ensure that if the hours or minutes
-  // contain a single digit, pad it out. Eg: 9 becomes 09
-  padTime: function (time) {
-    if (time < 10) {
-      return '0' + time;
-    }
-    return time;
+  events: {
+    "click": "open"
+  },
+
+  open: function () {
+    // we want to reuse the MessageView, so don't init a new view on
+    // every call of open. Instead, "bubble" the event up, passing the
+    // relevant model
+    this.trigger("viewMessage", this.model);
   }
 });
 
@@ -79,6 +142,9 @@ var ListView = Backbone.View.extend({
         self.render();
       }
     });
+    // we want to reuse the same view for multiple messages. This is
+    // why we are initiating it now
+    this.messageView = new MessageView();
   },
 
   // ### Render this View
@@ -98,11 +164,15 @@ var ListView = Backbone.View.extend({
     self.collection.each(function (listItem) {
       var v = new ListRowView({model: listItem});
       v.render();
+      // listen for the "viewMessage" event, loading the message whenever it is triggered
+      v.on('viewMessage', function (model) {
+        self.messageView.loadMessage(model);
+      });
+
       self.$el.children("table").append(v.el);
     });
 
     return self;
-
   },
 });
 
