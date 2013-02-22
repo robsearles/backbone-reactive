@@ -67,6 +67,10 @@ var MessageView = Backbone.View.extend({
     var self = this;
     self.model = model;
     self.model.fetch({success: function () {
+      // update the fact that we have read this message
+      self.model.set('isRead', true);
+
+      // render this message
       self.render();
     }});
   },
@@ -92,6 +96,10 @@ var ListRowView = Backbone.View.extend({
   tagName: "tr",
   className: "list-row",
 
+  initialize: function () {
+    this.listenTo(this.model, "change", this.render);
+  },
+
   render: function () {
     this.id = this.model.get("id");
 
@@ -104,12 +112,17 @@ var ListRowView = Backbone.View.extend({
     var subject = this.model.get("subject");
     var from = this.model.get("from");
 
+    var isRead = 'No';
+    if (this.model.get("isRead")) {
+      isRead = 'Yes';
+    }
+
     // Later I'll be converting this to a template, but for the time
     // being it will suffice
     var html = '<td>' + timeNice + '</td><td>' + dateNice + '</td>' +
-      '<td>' + subject + '</td><td>' + from + '</td>';
+      '<td>' + subject + '</td><td>' + from + '</td><td>' + isRead + '</td>';
 
-    this.$el.append(html);
+    this.$el.html(html);
     return this;
   },
 
@@ -157,7 +170,7 @@ var ListView = Backbone.View.extend({
       '<p>This is generated from JSON data. It isn\'t very special but ' +
       'there is enough going on to be a useful demo' +
       '<table border="1"><thead>' +
-      '<tr><th>Time</th><th>Date</th><th>Subject</th><th>From</th></tr>' +
+      '<tr><th>Time</th><th>Date</th><th>Subject</th><th>From</th><th>Read</th></tr>' +
       '</thead><tbody></tbody></table>';
     self.$el.html(html);
 
