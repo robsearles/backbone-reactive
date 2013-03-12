@@ -143,10 +143,6 @@ var ListRowView = Backbone.View.extend({
 var ListView = Backbone.View.extend({
 
   // ### Initialise the View
-  // The view is initialised by loading in some data via an Ajax call
-  // the data is then assigned to this view's Collection, which is
-  // defined as being of type ListCollection. Once the collection has
-  // been defined and created, the view is rendered
   initialize: function () {
     var self = this;
     self.collection = new ListCollection({}, {
